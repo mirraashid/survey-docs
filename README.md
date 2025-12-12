@@ -60,8 +60,59 @@ We will be following below steps to create and render the form in UI.
 
 ### 1. Creating the form using Form Builder
 
+#### 2.1.1 Add the Survey Creator Component in React
+
+You have already installed the `survey-creator-react` in the installation step. Now, create a `SurveyCreator.tsx` file which you will be using to render the Survey Creator component.
+Before that, you need to import the default styles and configuration of the Servey Creator. To import the default styles, you simply use - 
+
+``` jsx
+import "survey-creator-core/survey-creator-core.css";
+
+```
+
+You also need to create a configuration object, where you will be mentioning the properites of the Survey Creator component. To get a complete list of all the properties available, refer to the official docs [here](https://surveyjs.io/survey-creator/documentation/api-reference/icreatoroptions). For this tutorial we will be using `showLogicTab` and `isAutoSave` properties.
+
+``` jsx
+  const options = {
+    showLogicTab: true,
+    isAutoSave: false,
+  };
+```
+
+You then need to pass this configuration object to the SurveyCreator constructor to instantiate Survey Creator. Finally you will import `SurveyCreatorComponent` and render it in the component as follows - 
+
+``` jsx
+import { SurveyCreatorComponent, SurveyCreator } from "survey-creator-react";
+import "survey-creator-core/survey-creator-core.css";
+
+export default function CreatorPage() {
+  const options = {
+    showLogicTab: true,
+    isAutoSave: false,
+  };
+
+  const creator = new SurveyCreator(options);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <SurveyCreatorComponent creator={creator} />
+    </div>
+  );
+}
+```
+
+Once the Creator component in mounted, you should be able to see the screen as below - 
+
+![SurveyJS Survey Creator](https://github.com/mirraashid/survey-docs/blob/master/designer.png)
+
+
+#### 2.1.2 Create the form
+
+
+
 
 ### 2. Rendering the form
+
 
 #### 2.2.1 Configure Styles
 
