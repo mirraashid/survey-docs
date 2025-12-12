@@ -1,6 +1,6 @@
 # How to create a simple user feedback form using SurveyJS/React and Node.js + MongoDB Backend
 
-When you want to build modern, dynamic forms in a React application, SurveyJS is one of the most flexible libraries you can pick. Instead of manually building input boxes and validation logic, SurveyJS lets you create everything through a clean JSON schema, and the library renders the entire form UI for you. It also exposes several useful events - such as `onComplete` and `onValueChanged`, that make it easy to control what happens when users interact with your survey.
+When you want to build modern, dynamic forms in a React application, SurveyJS is one of the most flexible libraries you can pick. Instead of manually building input boxes and validation logic, SurveyJS lets you create everything through a visual builder or clean JSON schema, and the library renders the entire form UI for you. It also exposes several useful events - such as `onComplete` and `onValueChanged`, that make it easy to control what happens when users interact with your survey.
 
 In this article, we will build a User Feedback Survey, integrate it inside React using SurveyJS, and then send all submitted responses to a Node.js + MongoDB backend.
 
@@ -8,7 +8,8 @@ We will also look at customization options, such as themes, question styling, dy
 
 ### What you’ll learn
 
- - Basic SurveyJS usage inside React.
+ - Creating a Form using SurveyJS Form Builder
+ - Rendering the from in React
  - The onComplete event to get final results.
  - Sending the data to Node backend and store in mongoDB.
 
@@ -39,9 +40,10 @@ npm create vite@latest surveyjs-react -- --template react
 cd surveyjs-react
 npm install
 npm install survey-react-ui
+npm install survey-creator-react --save
 ```
 
-SurveyJS Form Library for React consists of two npm packages: `survey-core` (platform-independent code) and `survey-react-ui` (rendering code). The `survey-core` package will be installed automatically as a dependency.
+SurveyJS Form Library for React consists of two npm packages: `survey-core` (platform-independent code) and `survey-react-ui` (rendering code). The `survey-core` package will be installed automatically as a dependency. You also need to install `survey-creator-react` for Survey Creator visual builder.
 
 ### Backend
 
@@ -56,7 +58,12 @@ We’ll use Mongoose for the MongoDB schema and queries.
 
 We will be following below steps to create and render the form in UI.
 
-#### 2.1 Configure Styles
+### 1. Creating the form using Form Builder
+
+
+### 2. Rendering the form
+
+#### 2.2.1 Configure Styles
 
 To add SurveyJS themes to your application, create a React component that will render your form or survey and import the Form Library style sheet.
 
@@ -64,7 +71,7 @@ To add SurveyJS themes to your application, create a React component that will r
 import 'survey-core/survey-core.css';
 ```
 
-#### 2.2 Create a Model
+#### 2.2.2 Create a Model
 
 Define your survey as a JSON schema (questions, question types, etc.). This schema describes:
  - Questions
@@ -125,7 +132,7 @@ export default function SurveyForm() {
 }
 ```
 
-#### 2.3 Render the Form
+#### 2.2.3 Render the Form
 
 Once the model is ready, you simply mount it using the `Survey` component from `survey-react-ui`. Add it to the template, and pass the model instance you created in the previous step to the component's model attribute
 
@@ -146,7 +153,7 @@ export default function SurveyForm() {
 
 ```
 
-#### 2.4 Handle Form Completion
+#### 2.2.4 Handle Form Completion
 
 After a respondent submits a form, the results are available within the [onComplete](https://surveyjs.io/Documentation/Library?id=surveymodel#onComplete) event handler. If your application has a user identification system, you can add the user ID to the survey results before sending them to the server
 
