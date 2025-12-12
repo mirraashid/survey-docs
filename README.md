@@ -108,7 +108,64 @@ Once the Creator component in mounted, you should be able to see the screen as b
 
 #### 2.1.2 Create the form
 
+After you have successfully rendered the Survey Creator, the next step is to create the form. Survey Creator allows you to embed the form builder directly in your application, which is helpful if your product includes survey-building features, or if you simply want your team to design forms internally. It is a simple, intutive drag and drop builder which you will be using to create the form. For this tutorial, you will be creating 4 form fields - 
+  - `Single-line Input` with type `Text` for `Name` field
+  - `Single-line Input` with type `Email` for `Email` field
+  - `Rating scale Input` for `How would you rate us?` field
+  - `Long text` for `suggestions` field
 
+The creator allows us to modify the properties of the fields as well such as `Is Required`, `Read Only`, `Placeholder` and `Input type`. You should be able to easily add the field from the left panel of the screen. You can also toggle to `Preview` tab to view the preview of the form. When you add all the above fields the form preview should look like - 
+
+![SurveyJS Survey Preview](https://github.com/mirraashid/survey-docs/blob/master/Preview.png)
+
+
+#### 2.1.3 Extract the Generated JSON Schema
+
+When you are done with creating the form in the above step, you then need to get the generatd JSON schema to be used for rendering the form in the next steps. You can easily do so by toggling to `JSON Editor` tab and click on Download or Copy icon.
+
+![SurveyJS Survey Preview](https://github.com/mirraashid/survey-docs/blob/master/JSONSchema.png)
+
+The JSON generated will be as follows - 
+
+``` JSON
+{
+  "pages": [
+    {
+      "name": "page1",
+      "title": "User Feedback Survey",
+      "elements": [
+        {
+          "type": "text",
+          "name": "name",
+          "title": "Your name",
+          "isRequired": true
+        },
+        {
+          "type": "text",
+          "name": "email",
+          "title": "Email",
+          "isRequired": true,
+          "inputType": "email"
+        },
+        {
+          "type": "rating",
+          "name": "rating",
+          "title": "How would you rate us?",
+          "isRequired": true,
+          "rateMin": 1,
+          "rateMax": 5,
+        },
+        {
+          "type": "comment",
+          "name": "comments",
+          "title": "Any suggestions?"
+        }
+      ]
+    }
+  ],
+  "headerView": "advanced"
+}
+```
 
 
 ### 2. Rendering the form
@@ -124,56 +181,14 @@ import 'survey-core/survey-core.css';
 
 #### 2.2.2 Create a Model
 
-Define your survey as a JSON schema (questions, question types, etc.). This schema describes:
- - Questions
- - Question types
- - Pages
- - Validation rules
- - Conditional logic
- - UI preferences
-
-Here, we will be adding 4 items - Name, Email, Ratings and Comments. 
-
-``` jsx
-// Simple survey JSON schema
-const surveyJson = {
-    title: "User Feedback Survey",
-    elements: [
-    {
-        type: "text",
-        name: "name",
-        title: "Your name",
-        isRequired: true,
-    },
-    {
-        type: "text",
-        name: "email",
-        title: "Email",
-        inputType: "email",
-        isRequired: true,
-    },
-    {
-        type: "rating",
-        name: "rating",
-        title: "How would you rate us?",
-        isRequired: true,
-        rateMin: 1,
-        rateMax: 5,
-    },
-    {
-        type: "comment",
-        name: "comments",
-        title: "Any suggestions?",
-    },
-    ]
-};
-```
+Here, we will be simply using the JSON schema generated in the previous step.  
 
 To instantiate a model, you need to pass the model schema to the Model constructor. The model instance can then be later used to render the survey.
 
 ``` jsx
 import { Model } from 'survey-core';
 
+//Generated JSON Schema
 const surveyJson = { /* ... */ }
 
 export default function SurveyForm() {
