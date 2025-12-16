@@ -1,0 +1,446 @@
+# How to build dynamic forms in React using SurveyJS, Node.js & MongoDB Backend
+
+When you want to build custom, dynamic web forms in a React application, SurveyJS is one of the most flexible libraries you can choose. Instead of manually building input components and validation logic, you can design complex, interactive forms using the SurveyJS drag-and-drop Survey Creator. It outputs a clean JSON schema that the Form Library uses to render the entire form UI directly in the browser. It also exposes several useful events - such as `onComplete` and `onValueChanged`, that make it easy to control what happens when users interact with your survey.
+
+In this article, we will build and render a user feedback survey inside React using SurveyJS, and then send all submitted responses to a Node.js + MongoDB backend.
+
+We will also look at customization options, such as themes, question styling, dynamic behavior, and validation rules.
+
+### What you’ll learn
+
+ - How to create JSON-based forms using SurveyJS form builder
+ - How forms are rendered in React
+ - How to use the [`onComplete`](https://surveyjs.io/form-library/documentation/api-reference/survey-data-model#onComplete) event to handle results.
+ - How to [send survey data to your own backend](https://surveyjs.io/documentation/backend-integration). In this acticle, I am using Node.js backend and store responses in MongoDB.
+
+### What We Are Building
+
+A simple survey with these fields:
+
+ - Name (required)
+ - Email (required, validated)
+ - Rating (1–5)
+ - Comments (optional)
+
+Workflow:
+
+1. User fills the form inside the React UI.
+2. SurveyJS fires the `onComplete` event.
+3. Frontend sends data to the backend.
+4. Node.js API stores survey results in MongoDB.
+
+Below is step by step guide - 
+
+## 1. Installing Required Packages
+
+### Frontend
+
+``` bash
+npm create vite@latest surveyjs-react -- --template react
+cd surveyjs-react
+npm install
+npm install survey-react-ui
+npm install survey-creator-react --save
+```
+
+SurveyJS Form Library for React consists of two npm packages: `survey-core` (platform-independent code) and `survey-react-ui` (rendering code). The `survey-core` package will be installed automatically as a dependency. You also need to install `survey-creator-react` for Survey Creator visual builder.
+
+### Backend
+
+``` bash
+npm install express mongoose cors
+```
+
+We’ll use Mongoose for the MongoDB schema and queries.
+
+
+## 2. Frontend (React + SurveyJS)
+
+We will be following below steps to create and render the form.
+
+### 1. Creating the form using SurveyJS web form builder
+
+#### 2.1.1 Add the Survey Creator component in React
+
+SurveyJS allows you to integrate the form builder directly in your application, which is helpful if your application requires form-building features, or if you simply want your team to design forms internally without involving developers.
+
+You have already installed the `survey-creator-react` in the installation step. Now, create a `SurveyCreator.tsx` file which you will be using to render the Survey Creator component.
+Before that, you need to import the default styles and configuration of the Servey Creator. To import the default styles, you simply use - 
+
+``` jsx
+import "survey-creator-core/survey-creator-core.css";
+
+```
+
+You also need to create a configuration object, where you will be mentioning the properites of the Survey Creator component. To get a complete list of all the properties available, refer to the official docs [here](https://surveyjs.io/survey-creator/documentation/api-reference/icreatoroptions). For this tutorial we will be using `showLogicTab` and `isAutoSave` properties.
+
+``` jsx
+  const options = {
+    showLogicTab: true,
+    isAutoSave: false,
+  };
+```
+
+You then need to pass this configuration object to the SurveyCreator constructor to instantiate Survey Creator. Finally you will import `SurveyCreatorComponent` and render it in the component as follows - 
+
+``` jsx
+import { SurveyCreatorComponent, SurveyCreator } from "survey-creator-react";
+import "survey-creator-core/survey-creator-core.css";
+
+export default function CreatorPage() {
+  const options = {
+    showLogicTab: true,
+    isAutoSave: false,
+  };
+
+  const creator = new SurveyCreator(options);
+
+  return (
+    <div style={{ height: "100vh" }}>
+      <SurveyCreatorComponent creator={creator} />
+    </div>
+  );
+}
+```
+
+Once the Creator component in mounted, you should be able to see the screen as below - 
+
+![SurveyJS Survey Creator](https://github.com/mirraashid/survey-docs/blob/master/designer.png)
+
+
+#### 2.1.2 Create the form
+
+After you have successfully rendered Survey Creator, the next step is to create a web form. For this tutorial, you will be creating 4 form fields - 
+  - `Single-line Input` with type `Text` for `Name` field
+  - `Single-line Input` with type `Email` for `Email` field
+  - `Rating scale Input` for `How would you rate us?` field
+  - `Long text` for `suggestions` field
+
+The creator allows us to modify the properties of the fields as well, such as `Is Required`, `Read Only`, `Placeholder` and `Input type`. You should be able to easily add the field from the left panel of the screen. You can also switch to `Preview` tab to view the preview of the form. When you add all the above fields the form preview should look like - 
+
+![SurveyJS Survey Preview](https://github.com/mirraashid/survey-docs/blob/master/Preview.png)
+
+
+#### 2.1.3 Form JSON Schema
+
+When you are done with creating the form in the above step, you then need to get the generatd JSON schema to be used for rendering the form in the next steps. You can easily do so by switching to `JSON Editor` tab and click on Download or Copy icon.
+
+![SurveyJS Survey Preview](https://github.com/mirraashid/survey-docs/blob/master/JSONSchema.png)
+
+The JSON generated will be as follows - 
+
+``` JSON
+{
+  "pages": [
+    {
+      "name": "page1",
+      "title": "User Feedback Survey",
+      "elements": [
+        {
+          "type": "text",
+          "name": "name",
+          "title": "Your name",
+          "isRequired": true
+        },
+        {
+          "type": "text",
+          "name": "email",
+          "title": "Email",
+          "isRequired": true,
+          "inputType": "email"
+        },
+        {
+          "type": "rating",
+          "name": "rating",
+          "title": "How would you rate us?",
+          "isRequired": true,
+          "rateMin": 1,
+          "rateMax": 5,
+        },
+        {
+          "type": "comment",
+          "name": "comments",
+          "title": "Any suggestions?"
+        }
+      ]
+    }
+  ],
+  "headerView": "advanced"
+}
+```
+
+### 2. Rendering the form
+
+#### 2.2.1 Configure Styles
+
+To add SurveyJS themes to your application, create a React component that will render your form or survey and import the Form Library style sheet.
+
+``` jsx
+import 'survey-core/survey-core.css';
+```
+
+#### 2.2.2 Create a Model
+
+Here, we will be simply using the JSON schema generated in the previous step.  
+
+To instantiate a model, you need to pass the model schema to the Model constructor. The model instance can then be later used to render the survey.
+
+``` jsx
+import { Model } from 'survey-core';
+
+//Generated JSON Schema
+const surveyJson = { /* ... */ }
+
+export default function SurveyForm() {
+  const survey = new Model(surveyJson);
+
+  return "...";
+}
+```
+
+#### 2.2.3 Render the Form
+
+Once the model is ready, you simply mount it using the `Survey` component from `survey-react-ui`. Add it to the template, and pass the model instance you created in the previous step to the component's model attribute
+
+``` jsx
+import { Survey } from 'survey-react-ui';
+
+const surveyJson = { /* ... */ }
+
+export default function SurveyForm() {
+  const survey = new Model(surveyJson);
+
+  return (
+    <div style={{ maxWidth: 720, margin: '20px auto' }}>
+      <Survey model={survey} />
+    </div>
+  );
+}
+
+```
+
+#### 2.2.4 Handle Form Completion
+
+After a respondent submits a form, the results are available within the [`onComplete`](https://surveyjs.io/form-library/documentation/api-reference/survey-data-model#onComplete) event handler. If your application has a user identification system, you can add the user ID to the survey results before sending them to the server.
+
+Here is how our complete SurveyForm.jsx component will look like.
+
+``` jsx
+import { useEffect } from 'react';
+import { Model } from 'survey-core';
+import { Survey } from 'survey-react-ui';
+
+// Optionally import the default CSS
+import 'survey-core/survey-core.css';
+
+// Simple survey JSON schema
+const surveyJson = {
+    title: "User Feedback Survey",
+    elements: [
+    {
+        type: "text",
+        name: "name",
+        title: "Your name",
+        isRequired: true,
+    },
+    {
+        type: "text",
+        name: "email",
+        title: "Email",
+        inputType: "email",
+        isRequired: true,
+    },
+    {
+        type: "rating",
+        name: "rating",
+        title: "How would you rate us?",
+        isRequired: true,
+        rateMin: 1,
+        rateMax: 5,
+    },
+    {
+        type: "comment",
+        name: "comments",
+        title: "Any suggestions?",
+    },
+    ]
+};
+
+export default function SurveyForm() {
+  // Create the survey model
+  const survey = new Model(surveyJson);
+  const SURVEY_ID = 1;
+
+  useEffect(() => {
+    // onComplete event: fired when user finishes survey and clicks Complete
+    survey.onComplete.add(async (sender) => {
+        
+      // sender.data contains all answers as key-value pairs
+      const payload = {
+        surveyId: SURVEY_ID, // optional metadata
+        answers: sender.data,
+      };
+
+      try {
+        const resp = await fetch('http://localhost:5000/api/surveys/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) {
+          // basic user feedback - you can show modal/toast
+          console.error('Server returned an error while saving survey results');
+          return;
+        }
+
+        // you could show a thank-you message or route away
+        console.log('Survey saved successfully');
+      } catch (err) {
+        console.error('Network or server error', err);
+      }
+    });
+
+    // Clean-up when component unmounts
+    return () => {
+      survey.onComplete.clear();
+      survey.onValueChanged.clear();
+    };
+  }, [survey]);
+
+  return (
+    <div style={{ maxWidth: 720, margin: '20px auto' }}>
+      <Survey model={survey} />
+    </div>
+  );
+}
+
+```
+
+If you replicate the code correctly, you should see the following form:
+
+![SurveyJS form](https://github.com/mirraashid/survey-docs/blob/master/SurveyJs1.png)
+
+
+On submitting the form, you should see the Thank-you message - 
+
+
+![SurveyJS thankyou message](https://github.com/mirraashid/survey-docs/blob/master/Screenshot%202025-12-04%20at%205.35.00%20PM.png)
+
+
+
+## 3. MongoDB Backend (Node.js + Express + Mongoose)
+
+Once your SurveyJS form starts collecting responses on the frontend, the next step is to store the submitted data in a reliable database. MongoDB pairs very well with survey-style JSON data because it can store flexible, nested objects without requiring rigid schemas.
+
+In this section, we’ll build a clean backend API that receives survey data from the React app and stores it in MongoDB using Node.js, Express, and Mongoose.
+
+We have already installed the required packages - `express`, `cors` and `mongoose` in Step 1 of this tutorial.
+
+#### 3.1 Create the Project Structure
+
+We will be using the below folder structure for our `node.js` backend
+
+``` pgsql
+backend/
+ ├── models/
+ │    └── SurveyResponse.js
+ ├── routes/
+ │    └── surveyRoutes.js
+ ├── server.js
+ ├── package.json
+```
+
+ - `models/` holds your database schemas.
+ - `routes/` contains Express route definitions.
+ - `server.js` is your main server entry point.
+
+#### 3.2 Connect to MongoDB (Using Mongoose)
+
+Inside `server.js`, import the required modules and connect to MongoDB. You should note that we have used `cors()` which allows your React frontend (usually running on another port) to talk to this backend. The complete `server.js` file should look like: 
+
+``` js
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import surveyRoutes from "./routes/surveyRoutes.js";
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect("mongodb://localhost:27017/surveydb")
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("Connection error:", err));
+
+// Routes
+app.use("/api/surveys", surveyRoutes);
+
+// Server
+app.listen(5000, () => console.log("Server running on port 5000"));
+
+```
+
+#### 3.3 Define a Mongoose Schema and Model
+
+SurveyJS returns responses as plain JSON objects - their structure depends on your survey. Instead of creating rigid fields, storing the whole response as one object gives flexibility to support multiple survey types without refactoring. Inside `models/SurveyResponse.js` :
+
+``` js
+import mongoose from "mongoose";
+
+const SurveyResponseSchema = new mongoose.Schema(
+  {
+    data: {
+      type: Object,
+      required: true,
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now,
+    }
+  },
+  { collection: "survey_responses" }
+);
+
+export default mongoose.model("SurveyResponse", SurveyResponseSchema);
+```
+
+
+#### 3.4 Create an API Route to Save Survey Data
+
+In `routes/surveyRoutes.js`:
+
+``` js
+import express from "express";
+import SurveyResponse from "../models/SurveyResponse.js";
+
+const router = express.Router();
+
+// POST /api/surveys/submit
+router.post("/submit", async (req, res) => {
+  try {
+    const response = new SurveyResponse({
+      data: req.body
+    });
+
+    const saved = await response.save();
+    res.status(201).json({ message: "Survey saved successfully", saved });
+  } catch (error) {
+    console.error("Error saving survey:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+export default router;
+```
+
+
+## Conclusion
+
+SurveyJS, combined with Node.js, and MongoDB, provides a clean, flexible, and scalable way to build full-cycle form management system in a React app. This setup lets you design highly customizable forms on the frontend while storing responses securaly in your backend without rigid schema limitations. SurveyJS’s JSON-based configuration, built-in themes, and powerful event system make form creation faster and more intuitive compared to building UI components manually. On the backend, Node.js and Mongoose ensure the data is handled reliably and remains easy to query or extend. Overall, this stack offers a smooth, developer-friendly approach for collecting and managing structured user input.
+
